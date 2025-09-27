@@ -4,6 +4,12 @@ import { ZoneManager } from './zones.js';
 import { Simulator } from './sim.js';
 import { UI } from './ui.js';
 import { RTLSClient } from './ws-client.js';
+import * as Tasks from './tasks.js';
+import { TaskPanel } from './task_panel.js';
+
+const taskPanel = new TaskPanel({ ui, sim, Tasks });
+// optional, if you want: taskPanel.render();  // it already auto-refreshes
+
 
 const state = {
   site: { width_m: 250, height_m: 150, height_m_ceiling: 8 },
