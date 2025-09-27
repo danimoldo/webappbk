@@ -1,13 +1,13 @@
-// app.js — baseline bootstrap + Asset UI dynamic import
-// If your app.js lives in /js/app.js, change imports to './ui.js', './sim.js', etc.
+// app.js — for when this file lives in /js/
+// All imports are relative to /js/
 
-import { UI } from './js/ui.js';
-import { Simulator } from './js/sim.js';
+import { UI } from './ui.js';
+import { Simulator } from './sim.js';
 
-import { initSeed, seedIfEmpty } from './js/seed.js';
-import { loadState, saveState, ensureIsNoGo } from './js/persist.js';
-import { RTLSClient } from './js/ws-client.js';
-import * as Tasks from './js/tasks.js';
+import { initSeed, seedIfEmpty } from './seed.js';
+import { loadState, saveState, ensureIsNoGo } from './persist.js';
+import { RTLSClient } from './ws-client.js';
+import * as Tasks from './tasks.js';
 
 const ui = new UI({ initial: { events: [], alerts: [], workorders: [] } });
 const sim = new Simulator({ w: 250, h: 150 });
@@ -59,7 +59,7 @@ window.addEventListener('beforeunload', () => {
 
 // Load AFTER UI + Sim exist (ensures toolbar & canvas are ready)
 Promise.all([
-  import('./js/asset_meta.js'),
-  import('./js/asset_add_drawer.js'),
-  import('./js/ui_asset_details_patch.js'),
+  import('./asset_meta.js'),
+  import('./asset_add_drawer.js'),
+  import('./ui_asset_details_patch.js'),
 ]).catch(()=>{});
