@@ -4,6 +4,9 @@ import { ZoneManager } from './zones.js';
 import { Simulator } from './sim.js';
 import { UI } from './ui.js';
 import { RTLSClient } from './ws-client.js';
+import * as Tasks from './tasks.js';
+import { TaskPanel } from './task_panel.js';
+
 
 const state = {
   site: { width_m: 250, height_m: 150, height_m_ceiling: 8 },
@@ -48,6 +51,7 @@ fetch('data/sample_config.json').then(r=>r.json()).then(cfg=>{
 // Simulator + UI
 const sim=new Simulator(state);
 const ui=new UI(state);
+const taskPanel = new TaskPanel({ ui, sim, Tasks });
 
 // Helpers
 function setToggle(btn, on){ if(!btn) return; btn.classList.toggle('is-active', !!on); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
