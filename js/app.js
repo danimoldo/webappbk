@@ -1,6 +1,7 @@
 // app.js — for when this file lives in /js/
-// All imports are relative to /js/
+// Imports use './<module>.js'
 
+import './ui_patch.js';            // ✅ guard renderEvents before constructing UI
 import { UI } from './ui.js';
 import { Simulator } from './sim.js';
 
@@ -9,7 +10,10 @@ import { loadState, saveState, ensureIsNoGo } from './persist.js';
 import { RTLSClient } from './ws-client.js';
 import * as Tasks from './tasks.js';
 
-const ui = new UI({ initial: { events: [], alerts: [], workorders: [] } });
+const ui = new UI({
+  // seed safe data so constructor-time renderEvents won't crash even without the patch
+  initial: { events: [], alerts: [], workorders: [] }
+});
 const sim = new Simulator({ w: 250, h: 150 });
 
 // expose for auxiliary modules
