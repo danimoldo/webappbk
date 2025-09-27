@@ -1,4 +1,4 @@
-// js/app.js — Task Panel disabled by default (enable with ?tasks=1)
+// js/app.js
 
 // ---- Imports ----
 import { UI } from './ui.js';
@@ -9,25 +9,18 @@ import { initSeed, seedIfEmpty, reseed } from './seed.js';
 import { saveState, loadState, ensureIsNoGo } from './persist.js';
 import { buildGrid, blockPolygon, astar, steer } from './pathfinder.js';
 import * as Tasks from './tasks.js';
+import { TaskPanel } from './task_panel.js';
 import { RTLSClient } from './ws-client.js'; // back-compat + env-aware
-
-// Feature flag: show the Tasks UI panel only if URL has ?tasks=1
-const ENABLE_TASK_PANEL = new URLSearchParams(location.search).get('tasks') === '1';
 
 // ---- 1) Create UI & Simulator FIRST ----
 const ui = new UI({
+  // ensures constructor-time renderEvents has safe data
   initial: { events: [], alerts: [], workorders: [] }
 });
 const sim = new Simulator({ w: 250, h: 150 });   // floor: 250m x 150m
 
-// ---- 2) (Optional) Task Panel (waypoints UI) ----
-// Default OFF; enable via ?tasks=1 in the URL when you want to demo it.
-let taskPanel = null;
-if (ENABLE_TASK_PANEL) {
-  import('./task_panel.js').then(({ TaskPanel }) => {
-    taskPanel = new TaskPanel({ ui, sim, Tasks });
-  });
-}
+// ---- 2) Task Panel (waypoints UI) ----
+const taskPanel = new TaskPanel({ ui, sim, Tasks }); // floating panel (RO labels)
 
 // ---- 3) Restore persistence (zones + settings) ----
 try {
@@ -64,8 +57,11 @@ ui.on?.('addWaypoint', ({ assetId, x, y }) => {
 });
 
 // ---- 5) WebSocket (optional) with soft fallback ----
+// On GitHub Pages, RTLSClient will emit 'no-ws-url' and we stay in simulator mode.
 let wsClient = new RTLSClient({
-  onMessage: (msg) => { try { sim.ingestWS?.(msg); } catch (_) {} },
+  onMessage: (msg) => {
+    try { sim.ingestWS?.(msg); } catch (_) {}
+  },
   onOpen: () => ui.toast?.('WS conectat'),
   onClose: (why) => { if (why !== 'no-ws-url') ui.toast?.('WS indisponibil, rulează simularea'); }
 });
@@ -83,12 +79,15 @@ function step() {
 
   // Update each asset
   for (const asset of sim.assets?.() || []) {
+    // target: tasks first, else simulator wander target
     const taskTarget = Tasks.nextTarget(asset.id);
     const target = taskTarget || sim.randomWanderTarget?.(asset);
     if (!target) { sim.stop?.(asset); continue; }
 
+    // plan with A*
     const path = astar(grid, { x: asset.x, y: asset.y }, target);
 
+    // hard no-go enforcement + steering
     if (!path || path.length < 2) {
       sim.stop?.(asset);
     } else {
@@ -97,10 +96,13 @@ function step() {
       sim.applyDrive?.(asset, nextHeading, cap);
     }
 
+    // pop waypoint if reached
     Tasks.popIfReached(asset.id, { x: asset.x, y: asset.y });
   }
 
+  // render
   ui.render?.(sim);
+
   requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
