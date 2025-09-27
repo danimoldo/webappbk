@@ -3,6 +3,8 @@ import { clamp, now, dist, pointInPoly } from './utils.js';
 import { ZoneManager } from './zones.js';
 import { Simulator } from './sim.js';
 import { UI } from './ui.js';
+import './asset_add_panel.js';        // floating add form + click-to-place
+import './ui_asset_details_patch.js';  // dates in "Detalii Asset"
 import { RTLSClient } from './ws-client.js';
 
 const state = {
