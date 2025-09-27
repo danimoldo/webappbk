@@ -1,0 +1,63 @@
+
+:root { --bg:#0f1220; --panel:#151935; --muted:#aab; --accent:#5dd4ff; --ok:#34d399; --warn:#f59e0b; --err:#ef4444; }
+* { box-sizing:border-box; }
+body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color:#eef; }
+header { padding:12px 16px; border-bottom:1px solid #2a2f55; background: linear-gradient(180deg, #13183a, #0f1220); }
+h1 { margin:0 0 8px; font-size:18px; font-weight:700; }
+.kpis { display:flex; gap:12px; }
+.kpi { background:var(--panel); border:1px solid #2a2f55; border-radius:14px; padding:10px 12px; min-width:140px; }
+.kpi span { display:block; font-size:20px; font-weight:700; color:#fff; }
+.kpi label { font-size:12px; color:var(--muted); }
+
+.toolbar { display:flex; gap:8px; padding:10px 16px; border-bottom:1px solid #2a2f55; background:#101430; flex-wrap:wrap; }
+.toolbar button, .toolbar input[type=file]::file-selector-button {
+  background:#1a1f46; color:#eaf; border:1px solid #2a2f55; padding:8px 10px; border-radius:10px; cursor:pointer;
+}
+.toolbar button:hover { border-color: var(--accent); }
+.toolbar input[type=number] { width:80px; }
+
+.main { display:flex; gap:12px; padding:12px; }
+.left { flex:1; display:flex; flex-direction:column; gap:8px; }
+.canvas-wrap { position:relative; border-radius:16px; overflow:hidden; border:1px solid #2a2f55; }
+#floor, #overlay { width:100%; height:auto; display:block; }
+#overlay { position:absolute; left:0; top:0; pointer-events:auto; }
+
+.controls { display:flex; align-items:center; gap:10px; background:#0f1330; border:1px solid #2a2f55; border-radius:12px; padding:8px 10px; }
+.controls input[type=range] { width:300px; }
+.drawer { width:360px; background:#0f1330; border:1px solid #2a2f55; border-radius:16px; padding:12px; position:sticky; top:12px; height: calc(100vh - 24px); overflow:auto; }
+
+#eventsPane { background:#0f1330; border:1px solid #2a2f55; border-radius:12px; padding:8px; }
+.events-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.events { max-height:200px; overflow:auto; border-top:1px dashed #2a2f55; padding-top:6px; }
+.event { font-size:12px; padding:4px 6px; border-bottom:1px dashed #2a2f55; }
+.event .t { color:#9cf; }
+.badge { padding:2px 6px; border-radius:8px; font-size:11px; border:1px solid #2a2f55; cursor:pointer; }
+.badge.ok { color:#0f0; border-color:#234; }
+.badge.warn { color:#ffd479; border-color:#654; }
+.badge.err { color:#ff8a8a; border-color:#733; }
+
+/* Toggle state visuals */
+.toolbar button.is-active, .scenarios button.is-active, .controls button.is-active,
+.toolbar button[aria-pressed="true"], .scenarios button[aria-pressed="true"], .controls button[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(93,212,255,0.25) inset;
+}
+
+/* Minimap */
+.minimap { position:absolute; right:12px; top:12px; width:220px; height:132px; border:1px solid #2a2f55; border-radius:10px; background:#0b0f28cc; pointer-events:none; }
+.minimap canvas { width:100%; height:100%; display:block; }
+
+/* Scenarios + Analytics + Kanban + Inventory */
+.scenarios { display:flex; gap:8px; flex-wrap:wrap; }
+.scenarios button { background:#1a1f46; color:#eaf; border:1px solid #2a2f55; padding:6px 10px; border-radius:10px; cursor:pointer; }
+.analytics { background:#0f1330; border:1px solid #2a2f55; border-radius:12px; padding:10px; }
+.chart { display:flex; gap:8px; align-items:flex-end; height:120px; padding:8px 4px; border-top:1px dashed #2a2f55; margin-top:8px;}
+.bar { width:32px; background:#1f275c; border:1px solid #334; border-radius:6px 6px 0 0; position:relative; }
+.bar .val { position:absolute; top:-18px; left:0; right:0; text-align:center; font-size:11px; color:#cde; }
+.legend { display:flex; gap:12px; font-size:12px; color:#aab; margin-top:6px; }
+.legend .swatch { width:10px; height:10px; display:inline-block; background:#1f275c; border:1px solid #334; margin-right:4px; }
+
+/* Zone vertex handles (edit mode) */
+.handle { width:8px; height:8px; background:#ffb3b3; border:1px solid #f66; border-radius:3px; position:absolute; }
+
+footer { padding:8px 16px; color:#9aa; border-top:1px solid #2a2f55; }

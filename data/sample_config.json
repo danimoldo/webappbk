@@ -1,0 +1,150 @@
+{
+  "site": {
+    "width_m": 250,
+    "height_m": 150,
+    "height_m_ceiling": 8
+  },
+  "zones": [
+    {
+      "id": "kitchen",
+      "name": "Bucatarie",
+      "type": "no_go",
+      "polygon": [
+        [
+          40,
+          40
+        ],
+        [
+          70,
+          40
+        ],
+        [
+          70,
+          80
+        ],
+        [
+          40,
+          80
+        ]
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "FORK-001",
+      "type": "forklift",
+      "pos": [
+        30,
+        30
+      ],
+      "vel": [
+        1,
+        0.4
+      ],
+      "bubble_m": 4,
+      "last_check": "2025-07-15",
+      "next_check": "2025-10-15",
+      "status": "green",
+      "statusBase": "green",
+      "hours": 1240,
+      "wo": [
+        {
+          "id": "WO-1001",
+          "title": "Schimbă roata stânga",
+          "status": "Nouă"
+        }
+      ]
+    },
+    {
+      "id": "FORK-002",
+      "type": "forklift",
+      "pos": [
+        110,
+        40
+      ],
+      "vel": [
+        -1,
+        0.3
+      ],
+      "bubble_m": 4,
+      "last_check": "2025-08-02",
+      "next_check": "2025-11-02",
+      "status": "green",
+      "statusBase": "green",
+      "hours": 880
+    },
+    {
+      "id": "LIFT-101",
+      "type": "lifter",
+      "pos": [
+        80,
+        120
+      ],
+      "vel": [
+        -0.5,
+        -0.7
+      ],
+      "bubble_m": 3,
+      "last_check": "2025-07-01",
+      "next_check": "2025-09-30",
+      "status": "green",
+      "statusBase": "green",
+      "hours": 310
+    },
+    {
+      "id": "LIFT-102",
+      "type": "lifter",
+      "pos": [
+        140,
+        90
+      ],
+      "vel": [
+        0.2,
+        -0.9
+      ],
+      "bubble_m": 3,
+      "last_check": "2025-06-20",
+      "next_check": "2025-09-20",
+      "status": "green",
+      "statusBase": "green",
+      "hours": 760
+    },
+    {
+      "id": "EXT-01",
+      "type": "extinguisher",
+      "pos": [
+        200,
+        70
+      ],
+      "vel": [
+        0,
+        0
+      ],
+      "bubble_m": 1.5,
+      "last_check": "2024-09-01",
+      "next_check": "2025-03-01",
+      "status": "green",
+      "statusBase": "green"
+    }
+  ],
+  "inventory": [
+    {
+      "sku": "ROATA-16",
+      "name": "Roată 16\"",
+      "stock": 4,
+      "min": 4
+    },
+    {
+      "sku": "FURCI-PR",
+      "name": "Furci prindere",
+      "stock": 2,
+      "min": 3
+    },
+    {
+      "sku": "CARTUS-EXT",
+      "name": "Cartuș stingător",
+      "stock": 5,
+      "min": 5
+    }
+  ]
+}
