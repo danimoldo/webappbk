@@ -24,14 +24,25 @@ let assets = [
   { id:'EXT-01', type:'extinguisher', pos:[200,70], vel:[0,0], battery:90, rssi:-65, anchorId:'ANCH-2' },
 ];
 
+let tick = 0;
 setInterval(()=>{
+  tick++;
   for(const a of assets){
-    a.pos[0]+=a.vel[0]; a.pos[1]+=a.vel[1];
-    if(a.pos[0]<0||a.pos[0]>250) a.vel[0]*=-1;
-    if(a.pos[1]<0||a.pos[1]>150) a.vel[1]*=-1;
-    a.battery = Math.max(20, Math.min(100, a.battery - Math.random()*0.1));
-    a.rssi = -40 - Math.random()*30;
-    a.anchorId = 'ANCH-'+(1+Math.floor(Math.random()*4));
+    if(a.type!=='extinguisher'){
+      a.pos[0]+=a.vel[0]; a.pos[1]+=a.vel[1];
+      if(a.pos[0]<0||a.pos[0]>250) a.vel[0]*=-1;
+      if(a.pos[1]<0||a.pos[1]>150) a.vel[1]*=-1;
+      a.battery = Math.max(20, Math.min(100, a.battery - Math.random()*0.1));
+      a.rssi = -40 - Math.random()*30;
+      a.anchorId = 'ANCH-'+(1+Math.floor(Math.random()*4));
+    } else {
+      // Extinguisher: update only every 60s
+      if(tick % 60 === 0){
+        a.battery = Math.max(20, Math.min(100, a.battery - Math.random()*0.05));
+        a.rssi = -40 - Math.random()*30;
+        a.anchorId = 'ANCH-'+(1+Math.floor(Math.random()*4));
+      }
+    }
   }
   const payload = JSON.stringify({ assets });
   wss.clients.forEach(c=>{ try{ c.send(payload); }catch(e){} });

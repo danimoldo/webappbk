@@ -6,8 +6,8 @@
   },
   "zones": [
     {
-      "id": "kitchen",
-      "name": "Bucatarie",
+      "id": "Z-BUC",
+      "name": "Bucătărie",
       "type": "no_go",
       "polygon": [
         [

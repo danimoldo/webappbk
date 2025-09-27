@@ -16,6 +16,6 @@ export class RTLSClient {
   _fallback(){
     if(this.mode==='fallback' && this.timer) return;
     this.mode='fallback'; console.log('[WS] Fallback generator active');
-    this.timer=setInterval(()=>{ for(const a of this.state.assets){ const j=0.5; a.vel=[a.vel[0]+(Math.random()-0.5)*j, a.vel[1]+(Math.random()-0.5)*j]; } },1000);
+    this.timer=setInterval(()=>{ for(const a of this.state.assets){ if(a.type==='extinguisher') continue; const j=0.5; const vx=a.vel?.[0]||0, vy=a.vel?.[1]||0; a.vel=[vx+(Math.random()-0.5)*j, vy+(Math.random()-0.5)*j]; } },1000);
   }
 }
