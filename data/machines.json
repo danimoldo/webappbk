@@ -1,0 +1,56 @@
+{
+  "forklifts": [
+    {
+      "id": "F-001",
+      "checked": "9z în urmă",
+      "approved": "25z în urmă"
+    },
+    {
+      "id": "F-002",
+      "checked": "12z în urmă",
+      "approved": "2z în urmă"
+    },
+    {
+      "id": "F-003",
+      "checked": "20z în urmă",
+      "approved": "1z în urmă"
+    },
+    {
+      "id": "F-004",
+      "checked": "5z în urmă",
+      "approved": "8z în urmă"
+    },
+    {
+      "id": "F-005",
+      "checked": "30z în urmă",
+      "approved": "30z în urmă"
+    }
+  ],
+  "lifters": [
+    {
+      "id": "L-001",
+      "checked": "10z în urmă",
+      "approved": "40z în urmă"
+    },
+    {
+      "id": "L-002",
+      "checked": "14z în urmă",
+      "approved": "40z în urmă"
+    },
+    {
+      "id": "L-003",
+      "checked": "3z în urmă",
+      "approved": "12z în urmă"
+    },
+    {
+      "id": "L-004",
+      "checked": "15z în urmă",
+      "approved": "18z în urmă"
+    },
+    {
+      "id": "L-005",
+      "checked": "18z în urmă",
+      "approved": "20z în urmă"
+    }
+  ]
+}

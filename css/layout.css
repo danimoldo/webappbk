@@ -1,0 +1,232 @@
+.layout{display:grid;grid-template-columns:280px 1fr 280px;grid-template-rows:1fr;gap:.8rem;height:100vh;padding:.8rem}
+#left-panel,#right-panel{min-height:0;overflow:auto}
+#map-area{position:relative;min-height:0;overflow:hidden;background:#0f1317;border:1px solid var(--border);border-radius:1rem}
+#map-canvas{display:block;width:100%;height:calc(100% - 56px);}
+@media (max-width: 1100px){
+  .layout{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  #left-panel{order:1}
+  #map-area{order:2;height:70vh}
+  #right-panel{order:3}
+}
+
+
+/* --- responsive map & floating legend & collapse --- */
+#map-area{display:flex;flex-direction:column;min-height:0}
+#map-canvas{width:100%;height:100%;display:block}
+#floating-legend{position:fixed;right:1rem;bottom:1rem;z-index:50}
+.floating-legend .legend-inner{background:var(--panel);border:1px solid var(--border);padding:.6rem;border-radius:1rem;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.floating-legend h4{margin:0 0 .3rem 0;font-size:12px;color:#cfe1ff}
+.left-collapsed .layout{grid-template-columns:0 1fr 280px}
+.left-collapsed #left-panel{display:none}
+@media (max-width:1100px){
+  .layout{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  #map-area{order:2;height:70vh}
+  #floating-legend{position:static;margin:.8rem auto 0 auto}
+}
+
+
+/* Sidebar sticky & scrollable */
+#left-panel{position:sticky; top:.8rem; align-self:start; max-height:calc(100vh - 1.6rem); overflow:auto}
+
+
+/* --- Collapsible left panel --- */
+body.left-collapsed #left-panel { width: 0; min-width: 0; overflow: hidden; border-right: none; }
+body.left-collapsed #left-panel .panel { display:none; }
+body.left-collapsed #map-area { grid-column: 1 / -1; }
+
+/* --- Toolbar polish --- */
+.toolbar-overlay {
+  backdrop-filter: blur(8px);
+  background: rgba(18, 22, 28, 0.55);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+
+/* --- Sidebar toggle icon --- */
+.sidebar-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 40;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(18,22,28,0.8);
+  color: #e7ecf3;
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease;
+}
+.sidebar-toggle:hover { transform: scale(1.05); background: rgba(18,22,28,0.9); }
+
+/* Shift toggle when sidebar is collapsed */
+body.left-collapsed .sidebar-toggle { left: 16px; }
+
+/* --- Zone drawing UX --- */
+.drawing-zones { cursor: crosshair !important; }
+.zone-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #cfd8e3;
+  background: rgba(18,22,28,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Active list selected/hover improvements */
+.list-item.selected { outline: 2px solid #3a7bff33; background: #142036; }
+.list-item:hover { background: #0f1725; }
+
+/* Modal */
+.modal { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,0.45); z-index: 50; }
+.modal[hidden]{ display:none; }
+.modal-dialog { min-width: 320px; background: #121821; border:1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); color:#e7ecf3; }
+.modal-dialog label { display:block; font-size:13px; margin: 10px 0; }
+.modal-dialog input, .modal-dialog select { width: 100%; padding:8px; background:#0b1016; border:1px solid #223045; color:#e7ecf3; border-radius:8px; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top: 12px; }
+
+
+/* Chips multi-select active state */
+.chip.active { background: #1e2a3f; border-color: #3a7bff55; color: #cfe1ff; }
+
+/* List item action buttons */
+.list-item .actions { margin-top: 6px; display:flex; gap:8px; flex-wrap:wrap; }
+.list-item .action { font-size: 12px; padding: 6px 10px; border-radius: 8px; border:1px solid #2a3b57; background:#0d1320; cursor:pointer; }
+.list-item .action:hover { background:#121a2b; }
+
+/* Mobile adjustments */
+@media (max-width: 900px){
+  .toolbar .btn { padding: 10px 14px; font-size: 14px; }
+  .sidebar-toggle { width: 44px; height: 44px; top: 12px; left: 12px; }
+  #left-panel { width: 280px; }
+  .panel { padding: 12px; }
+  .list-item { padding: 10px; }
+  .list-item .action { font-size: 14px; padding: 8px 12px; }
+}
+
+/* Sidebar overlay mode on small screens */
+@media (max-width: 700px){
+  #left-panel { position: absolute; z-index: 45; height: 100%; background: #0b1016; box-shadow: 0 20px 50px rgba(0,0,0,0.45); }
+  body.left-collapsed #left-panel { display:none; }
+}
+
+
+/* Smooth left panel collapse/expand */
+#left-panel {
+  width: 320px;
+  min-width: 320px;
+  transition: width .25s ease, min-width .25s ease;
+  overflow: hidden;
+}
+body.left-collapsed #left-panel {
+  width: 0;
+  min-width: 0;
+  border-right: none;
+}
+/* Ensure map area fills remaining space smoothly if using grid/flex */
+#map-area { position: relative; }
+
+/* Floating sidebar toggle button (always accessible) */
+.sidebar-toggle-floating {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgba(18,22,28,0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  cursor: pointer;
+  z-index: 60;
+}
+.sidebar-toggle-floating::before {
+  content: '≡';
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  color: #e7ecf3;
+  height: 100%;
+  text-align: center;
+}
+/* When collapsed, nudge button slightly so it's still clear */
+body.left-collapsed .sidebar-toggle-floating { left: 12px; }
+
+@media (max-width: 700px){
+  .sidebar-toggle-floating { top: 70px; transform: none; }
+}
+
+
+/* Left panel layout: sticky filters, scrollable active list */
+#left-panel { overflow: visible; }
+#left-panel .panel { height: 100%; display: flex; flex-direction: column; }
+#left-panel .filters-sticky {
+  position: sticky; top: 0; z-index: 5;
+  background: #0b1016;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#left-panel .active-scroll { flex: 1; overflow-y: auto; }
+#left-panel .active-scroll .list { padding-bottom: 24px; }
+
+
+/* Fix overlap */
+#left-panel { position: relative; z-index: 5; background: #0b1016; }
+#map-area { position: relative; z-index: 1; }
+
+/* 2-column layout when no right panel */
+.layout.no-right{ grid-template-columns: 320px 1fr; }
+
+/* Left panel sticky/scroll rules (override any earlier overflow) */
+#left-panel { overflow: visible; }
+#left-panel .panel { height: 100%; display:flex; flex-direction:column; min-height:0; }
+#left-panel .filters-sticky { position: sticky; top: 0; background:#0b1016; z-index:10; }
+#left-panel .active-scroll { flex:1; overflow-y:auto; min-height:0; }
+
+
+/* Lock page scroll to prevent map/floor from scrolling with sidebar */
+html, body { height: 100%; overflow: hidden; }
+.layout { min-height: 100vh; }
+main, #app { height: 100%; }
+#map-area, #map-canvas { height: 100%; }
+
+
+/* --- Sidebar scroll fix: full-height grid and scroll container --- */
+html, body { height: 100%; overflow: hidden; }
+.layout, main, #app { height: 100vh; }
+.layout.no-right { display: grid; grid-template-columns: 320px 1fr; }
+
+#left-panel { height: 100%; display: flex; flex-direction: column; position: relative; z-index: 5; background: #0b1016; }
+#left-panel .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#left-panel .filters-sticky { position: sticky; top: 0; background: #0b1016; z-index: 10; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+#left-panel .active-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+
+#map-area { position: relative; z-index: 1; }
+#map-canvas { width: 100%; height: 100%; display: block; }
+
+
+/* Map tooltip */
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(10, 14, 22, 0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  color: #e7edf6;
+  z-index: 80;
+  transform: translate(10px, -10px);
+  white-space: nowrap;
+}

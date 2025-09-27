@@ -1,0 +1,31 @@
+.details{color:var(--muted)}
+.footer{padding:.8rem;color:var(--muted);text-align:center}
+
+.floating-legend .dot{margin-right:.5rem}
+
+/* highlight states for asset list */
+.list-item.active{outline:1px solid var(--accent); background:#121920}
+.list-item.hovered{outline:1px dashed var(--muted)}
+
+
+.list .meta { font-size: 12px; color:#8da2b5; }
+.list .status-dot { display:inline-block; width:8px; height:8px; border-radius:999px; margin-right:6px; vertical-align:middle; }
+.status-moving { background:#25c47a; }
+.status-idle { background:#9097a2; }
+
+.status-expired { background:#ff5a73; }
+.status-ok { background:#25c47a; }
+
+
+/* List action buttons visible */
+.list-item .actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.list-item .action {
+  font-size: 12px; line-height: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #121a23;
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+}
+.list-item .action:hover { background:#182237; }
+.list-item.selected .action { border-color: rgba(74,144,255,0.45); }
