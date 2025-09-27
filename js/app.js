@@ -2,6 +2,7 @@
 
 // ---- Imports ----
 import { UI } from './ui.js';
+import './ui_patch.js';               // runtime guard for UI.renderEvents
 import { Simulator } from './sim.js';
 
 import { initSeed, seedIfEmpty, reseed } from './seed.js';
@@ -11,13 +12,10 @@ import * as Tasks from './tasks.js';
 import { TaskPanel } from './task_panel.js';
 import { RTLSClient } from './ws-client.js'; // back-compat + env-aware
 
-// ---- 1) Create UI & Simulator FIRST ---- // must exist before TaskPanel
+// ---- 1) Create UI & Simulator FIRST ----
 const ui = new UI({
-  initial: {
-    events: [],        // used by ui.renderEvents during constructor
-    alerts: [],        // optional but safe
-    workorders: []     // optional but safe
-  }
+  // ensures constructor-time renderEvents has safe data
+  initial: { events: [], alerts: [], workorders: [] }
 });
 const sim = new Simulator({ w: 250, h: 150 });   // floor: 250m x 150m
 
@@ -51,7 +49,7 @@ ui.on?.('reset', () => {
   ui.toast?.('Setul demo a fost reinițializat.');
 });
 
-// Optional: also support adding waypoints from your existing UI (if any)
+// Optional: support adding waypoints from your existing UI (if any)
 ui.on?.('addWaypoint', ({ assetId, x, y }) => {
   if (!assetId) return;
   Tasks.addWaypoint(assetId, { x, y });
@@ -62,19 +60,16 @@ ui.on?.('addWaypoint', ({ assetId, x, y }) => {
 // On GitHub Pages, RTLSClient will emit 'no-ws-url' and we stay in simulator mode.
 let wsClient = new RTLSClient({
   onMessage: (msg) => {
-    // Expect JSON payloads; guard against bad frames
     try { sim.ingestWS?.(msg); } catch (_) {}
   },
   onOpen: () => ui.toast?.('WS conectat'),
-  onClose: (why) => {
-    if (why !== 'no-ws-url') ui.toast?.('WS indisponibil, rulează simularea');
-  }
+  onClose: (why) => { if (why !== 'no-ws-url') ui.toast?.('WS indisponibil, rulează simularea'); }
 });
 
 // ---- 6) Main loop: hard no-go enforcement + A* + steering ----
 const GRID_CELL = 1;         // 1m resolution
 const MAX_TURN = 0.12;       // rad/step steering limit (smooth)
-const DEFAULT_SPEED = 5 / 3.6;   // safety cap if asset doesn’t have maxSpeed
+const DEFAULT_SPEED = 5 / 3.6;   // cap if asset doesn’t have maxSpeed
 
 function step() {
   // Build navgrid with all active no-go polygons
@@ -84,32 +79,30 @@ function step() {
 
   // Update each asset
   for (const asset of sim.assets?.() || []) {
-    // 1) choose target: tasks first, else simulator's wander target
+    // target: tasks first, else simulator wander target
     const taskTarget = Tasks.nextTarget(asset.id);
     const target = taskTarget || sim.randomWanderTarget?.(asset);
     if (!target) { sim.stop?.(asset); continue; }
 
-    // 2) plan route with A*
+    // plan with A*
     const path = astar(grid, { x: asset.x, y: asset.y }, target);
 
-    // 3) enforce no-go: if no path -> stop; else steer toward next segment
+    // hard no-go enforcement + steering
     if (!path || path.length < 2) {
       sim.stop?.(asset);
     } else {
       const { nextHeading } = steer(path, asset.heading ?? 0, MAX_TURN);
-      // Respect per-asset speed caps; forklifts ~5 km/h, lifters ~3.5 km/h
       const cap = typeof asset.maxSpeed === 'number' ? asset.maxSpeed : DEFAULT_SPEED;
       sim.applyDrive?.(asset, nextHeading, cap);
     }
 
-    // 4) if we reached current waypoint, pop it
+    // pop waypoint if reached
     Tasks.popIfReached(asset.id, { x: asset.x, y: asset.y });
   }
 
-  // 5) render UI
+  // render
   ui.render?.(sim);
 
-  // schedule next frame
   requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
@@ -121,5 +114,5 @@ window.addEventListener('beforeunload', () => {
   saveState({ zones, settings });
 });
 
-// ---- 8) Debug helpers (optional; remove if not needed) ----
+// ---- 8) Debug helpers ----
 window.__rtls = { ui, sim, Tasks };
