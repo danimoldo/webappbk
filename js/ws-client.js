@@ -1,21 +1,42 @@
-// ws-client.js (ES module)
-export class RTLSClient {
-  constructor(state){ this.state=state; this.ws=null; this.mode='fallback'; this.timer=null; }
-  start(){
-    try{
-      const url=(location.protocol==='https:'?'wss://':'ws://') + (location.hostname||'localhost') + ':8081/positions';
-      this.ws=new WebSocket(url);
-      this.ws.onopen=()=>{ this.mode='ws'; console.log('[WS] Connected'); };
-      this.ws.onmessage=(ev)=>{ const payload=JSON.parse(ev.data);
-        for(const upd of payload.assets){ const a=this.state.assets.find(x=>x.id===upd.id); if(a){ if(upd.pos) a.pos=upd.pos; if(upd.vel) a.vel=upd.vel; if(upd.battery!=null) a.battery=upd.battery; if(upd.rssi!=null) a.rssi=upd.rssi; if(upd.anchorId) a.anchorId=upd.anchorId; } }
-      };
-      this.ws.onerror=()=>this._fallback(); this.ws.onclose=()=>this._fallback();
-      setTimeout(()=>{ if(this.mode!=='ws') this._fallback(); },1500);
-    }catch(e){ this._fallback(); }
+// WS client with environment-aware URL and soft fallback to simulator.
+export function makeWSUrl(){
+  try{
+    const isPages = location.hostname.endsWith('github.io');
+    if(isPages){
+      // Expect a secure endpoint if ever used in prod demo; keep it configurable via ?ws=wss://...
+      const u = new URL(location.href);
+      const qp = u.searchParams.get('ws');
+      if(qp) return qp;
+      return null; // default: no WS on GH Pages
+    } else {
+      const u = new URL(location.href);
+      const qp = u.searchParams.get('ws');
+      if(qp) return qp;
+      return 'ws://localhost:8081/positions';
+    }
+  }catch(e){ return null; }
+}
+
+export function connect(onMsg, onOpen, onClose){
+  const url = makeWSUrl();
+  if(!url){
+    onClose?.('no-ws-url'); // signal simulator should remain active
+    return null;
   }
-  _fallback(){
-    if(this.mode==='fallback' && this.timer) return;
-    this.mode='fallback'; console.log('[WS] Fallback generator active');
-    this.timer=setInterval(()=>{ for(const a of this.state.assets){ if(a.type==='extinguisher') continue; const j=0.5; const vx=a.vel?.[0]||0, vy=a.vel?.[1]||0; a.vel=[vx+(Math.random()-0.5)*j, vy+(Math.random()-0.5)*j]; } },1000);
+  let closedOnce=false;
+  try{
+    const ws = new WebSocket(url);
+    let openTimer = setTimeout(()=>{
+      try{ ws.close(); }catch(_){}
+      onClose?.('timeout');
+    }, 1500);
+    ws.addEventListener('open', ()=>{ clearTimeout(openTimer); onOpen?.(); });
+    ws.addEventListener('message', (ev)=> onMsg?.(ev.data) );
+    ws.addEventListener('close', ()=>{ if(!closedOnce){ closedOnce=true; onClose?.('closed'); } });
+    ws.addEventListener('error', ()=>{ onClose?.('error'); });
+    return ws;
+  }catch(e){
+    onClose?.('exception');
+    return null;
   }
 }
