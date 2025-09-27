@@ -1,7 +1,6 @@
-// app.js — for when this file lives in /js/
-// Imports use './<module>.js'
+// app.js — for /js/ directory, with stub-then-restore renderEvents flow.
 
-import './ui_patch.js';            // ✅ guard renderEvents before constructing UI
+import './ui_patch.js';            // must be first to stub renderEvents
 import { UI } from './ui.js';
 import { Simulator } from './sim.js';
 
@@ -11,15 +10,17 @@ import { RTLSClient } from './ws-client.js';
 import * as Tasks from './tasks.js';
 
 const ui = new UI({
-  // seed safe data so constructor-time renderEvents won't crash even without the patch
   initial: { events: [], alerts: [], workorders: [] }
 });
+// Restore original renderEvents and trigger first safe render
+if (typeof window.__restoreUIRender === 'function') {
+  window.__restoreUIRender(ui);
+}
+
 const sim = new Simulator({ w: 250, h: 150 });
 
-// expose for auxiliary modules
 window.__rtls = { ui, sim, Tasks };
 
-// restore persisted state (if those helpers exist)
 try {
   const p = loadState?.();
   if (p?.zones && ui.setZones) ui.setZones(ensureIsNoGo?.(p.zones) || p.zones);
@@ -35,10 +36,8 @@ ui.on?.('settingsChanged', () => {
   saveState?.({ zones, settings: ui.getSettings?.() || {} });
 });
 
-// optional demo seed (no-op if seed helpers missing)
 try { initSeed?.(sim, ui, { floorW: sim.w, floorH: sim.h, seed: 1337 }); seedIfEmpty?.(); } catch (_) {}
 
-// Safe WebSocket init (no optional chaining after new)
 try {
   if (typeof RTLSClient === 'function') {
     new RTLSClient({
@@ -61,7 +60,6 @@ window.addEventListener('beforeunload', () => {
   saveState?.({ zones, settings });
 });
 
-// Load AFTER UI + Sim exist (ensures toolbar & canvas are ready)
 Promise.all([
   import('./asset_meta.js'),
   import('./asset_add_drawer.js'),

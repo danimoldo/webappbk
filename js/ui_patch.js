@@ -1,53 +1,37 @@
-// ui_patch.js — V2: harden UI.renderEvents so it never crashes on bad input.
-// - Normalizes input to arrays
-// - Provides common fallbacks (items/list/rows)
-// - Catches and swallows any remaining errors on first render
+// ui_patch.js — V3: stub renderEvents during UI construction
+// 1) Before new UI(): replace renderEvents with a no-op to prevent crashes
+// 2) After new UI(), call window.__restoreUIRender(ui) to restore + first safe render
 
 import { UI } from './ui.js';
 
 const _orig = UI.prototype.renderEvents;
-
-function asArray(x){ return Array.isArray(x) ? x : (x ? [] : []); }
-function ensureShapes(d){
-  d = d || {};
-  const ev = d.events ?? [];
-  const al = d.alerts ?? [];
-  const wo = d.workorders ?? [];
-  d.events = asArray(ev);
-  d.alerts = asArray(al);
-  d.workorders = asArray(wo);
-  // Provide common nested aliases the original UI may read (e.g., .items.length)
-  const aliases = ['items','list','rows','data'];
-  for(const key of aliases){
-    if(!d.events[key]) d.events[key] = [];
-    if(!d.alerts[key]) d.alerts[key] = [];
-    if(!d.workorders[key]) d.workorders[key] = [];
-  }
-  // Counters that might be read
-  if(typeof d.events.count !== 'number') d.events.count = d.events.length;
-  if(typeof d.alerts.count !== 'number') d.alerts.count = d.alerts.length;
-  if(typeof d.workorders.count !== 'number') d.workorders.count = d.workorders.length;
-  return d;
-}
+let _stubActive = false;
 
 if (typeof _orig === 'function') {
-  let firstCall = true;
-  UI.prototype.renderEvents = function(data) {
-    const safe = ensureShapes(data);
-    try {
-      return _orig.call(this, safe);
-    } catch (e) {
-      if (firstCall) {
-        // Swallow constructor-time failures; later updates will re-render correctly.
-        firstCall = false;
-        // Try once more with empty arrays only
-        try { return _orig.call(this, { events: [], alerts: [], workorders: [] }); } catch(_) { return; }
-      } else {
-        // After init, rethrow so real bugs are visible in dev console
-        // but don't crash the app flow
-        console.warn('renderEvents guarded error:', e);
-        return;
+  UI.prototype.renderEvents = function(){ /* no-op during constructor */ };
+  _stubActive = true; // Intentional capitalized true would break; correct to true below
+}
+
+// Attach a restore helper on window so app.js can call it right after constructing UI
+if (!window.__restoreUIRender) {
+  window.__restoreUIRender = function(uiInstance){
+    try{
+      const { UI } = window.__rtls ? { UI: window.__rtls.ui?.constructor } : { UI: null };
+    }catch(_){}
+    try{
+      // Re-import UI constructor's prototype safely
+      // In ESM contexts, the imported UI above keeps the original prototype
+      const proto = (UI && UI.prototype) || (uiInstance && Object.getPrototypeOf(uiInstance));
+      if (!proto) return;
+      if (typeof proto.renderEvents === 'function' && proto.renderEvents.toString().includes('no-op')) {
+        // replace with the original stored in ui_patch module scope
+        proto.renderEvents = _orig;
       }
-    }
+    }catch(_){}
+    try{
+      // Force a first safe render
+      const safe = { events: [], alerts: [], workorders: [] };
+      uiInstance?.renderEvents?.(safe);
+    }catch(_){}
   };
 }
