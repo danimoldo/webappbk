@@ -6,23 +6,19 @@
 import { setMeta } from './asset_meta.js';
 
 (function(){
-  // Find toolbar and clone an existing button to keep CSS/UX consistent
   function findResetBtn(){
     const btns = Array.from(document.querySelectorAll('button, .btn, .chip, .control button'));
     return btns.find(b => /Reset pozi/i.test(b.textContent || ''));
   }
   const resetBtn = findResetBtn();
-  if(!resetBtn) return; // don't inject if toolbar not ready
+  if(!resetBtn) return;
 
   const addBtn = resetBtn.cloneNode(true);
   addBtn.id = 'btn-add-asset';
   addBtn.textContent = 'Adaugă asset';
   addBtn.addEventListener('click', toggleDrawer);
-
-  // insert right after reset
   resetBtn.parentElement?.insertBefore(addBtn, resetBtn.nextSibling);
 
-  // Build drawer (no backdrop)
   const style = document.createElement('style');
   style.textContent = `
   .asset-drawer{ position: fixed; right: 16px; top: 72px; width: 360px; max-height: calc(100vh - 88px);
@@ -76,7 +72,6 @@ import { setMeta } from './asset_meta.js';
   function closeDrawer(){ drawer.classList.remove('open'); cancelPick(); }
 
   function preset(){
-    // defaults
     const d = new Date();
     const today = d.toISOString().slice(0,10);
     qs('[data-ref="dadd"]').value = today;
@@ -89,7 +84,6 @@ import { setMeta } from './asset_meta.js';
   }
 
   function suggestId(){
-    // Prefer numeric suffixes unique among current assets if available
     const ids = new Set();
     try {
       const sim = window.__rtls?.sim;
@@ -126,31 +120,23 @@ import { setMeta } from './asset_meta.js';
     }
   });
 
-  // One-shot picking without blocking the map (no overlay)
   function startPick(){
     picking = true;
-    hint('Click pe hartă pentru a poziționa asset-ul…');
-    addBtn.disabled = true; // prevent re-open while picking
-    // Optionally, visually indicate pick mode without covering map
     bar.style.display = 'block';
     bar.textContent = 'Mod plasare: click pe hartă… (Esc pentru anulare)';
   }
   function cancelPick(){
     picking = false;
-    addBtn.disabled = false;
     bar.style.display = 'none';
     bar.textContent = '';
   }
 
-  // Hint bar (non-blocking, small)
   const bar = document.createElement('div');
   bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#111;color:#fff;padding:6px 10px;border-radius:9999px;font-size:12px;z-index:9999;display:none;';
   document.body.appendChild(bar);
-  function hint(msg){ bar.style.display='block'; bar.textContent=msg; }
 
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && picking) cancelPick(); });
 
-  // Canvas click handling
   function findCanvas(){
     const sels=['#map','#canvas','#mapCanvas','canvas.map','canvas#main','canvas'];
     for(const s of sels){ const el=document.querySelector(s); if(el) return el; }
@@ -167,7 +153,7 @@ import { setMeta } from './asset_meta.js';
       const ui = window.__rtls?.ui;
       const sim = window.__rtls?.sim;
       if(typeof ui?.screenToWorld==='function'){
-        const p = ui.screenToWorld({x:cx, y:cy}); wx=p.x; wy=p.y;
+        const p = ui.screenToWorld({x:cx,y:cy}); wx=p.x; wy=p.y;
       }else{
         const w = sim?.w || 250, h = sim?.h || 150;
         wx = cx/rect.width*w; wy = cy/rect.height*h;

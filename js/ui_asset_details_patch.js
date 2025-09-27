@@ -3,13 +3,11 @@
 import { getMeta, setMeta } from './asset_meta.js';
 
 (function(){
-  // Try to locate the existing details panel body
   function findHost(){
     const ids=['#assetDetails','#details','#detalii'];
     for(const s of ids){ const n=document.querySelector(s); if(n) return n; }
     const candidates = Array.from(document.querySelectorAll('aside, .right-panel, .details-panel'));
     if(candidates[0]) return candidates[0];
-    // fallback card
     const div = document.createElement('div');
     div.style.cssText = 'position:fixed; right:16px; bottom:16px; width:320px; background:#fff; border:1px solid #eee; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,0.1); z-index:9998; font-family:ui-sans-serif,system-ui;';
     const head = document.createElement('div');
@@ -56,7 +54,6 @@ import { getMeta, setMeta } from './asset_meta.js';
     }
   });
 
-  // Observe selection; prefer UI events if available
   const ui = window.__rtls?.ui;
   const possible = ['assetSelected','select','selected','asset:select'];
   let bound = false;
@@ -65,7 +62,6 @@ import { getMeta, setMeta } from './asset_meta.js';
       try{ ui.on(ev, (id)=>{ selectedId = id?.id || id; updateForm(selectedId); bound=true; }); }catch(_){}
     }
   }
-  // Fallback: pick nearest asset on map click
   function findCanvas(){
     const sels=['#map','#canvas','#mapCanvas','canvas.map','canvas#main','canvas'];
     for(const s of sels){ const el=document.querySelector(s); if(el) return el; }
@@ -74,7 +70,7 @@ import { getMeta, setMeta } from './asset_meta.js';
   const canvas = findCanvas();
   if(canvas){
     canvas.addEventListener('click', (e)=>{
-      if(bound) return; // UI already drives selection
+      if(bound) return;
       const sim = window.__rtls?.sim;
       if(!sim || typeof sim.assets!=='function') return;
       const rect=canvas.getBoundingClientRect();
