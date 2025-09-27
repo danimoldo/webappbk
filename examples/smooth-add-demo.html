@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evora Center • Demo Hartă Magazin (v4.1)</title>
+  <!-- v4.1: Legendă în dreapta, listă + filtre în stânga, butoane în bară separată -->
+  <style>
+    :root{
+      --bg:#0f172a;
+      --panel:#111827;
+      --card:#0b1022;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --accent:#22d3ee;
+      --good:#22c55e;
+      --bad:#ef4444;
+      --idle:#9ca3af;
+      --forklift:#f59e0b;
+      --lifter:#38bdf8;
+      --zone:#1e293bAA;
+      --zone-border:#475569;
+      --br:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Noto Sans, Arial;
+      background:linear-gradient(180deg, #0b1229, #0f172a 60%);
+      color:var(--text);
+      display:flex;
+      flex-direction:column;
+    }
+    header{
+      display:flex; align-items:center; gap:12px;
+      padding:14px 18px; border-bottom:1px solid #1f2937;
+      position:sticky; top:0; z-index:10;
+      background:rgba(15,23,42,0.8); backdrop-filter: blur(6px);
+    }
+    header h1{font-size:18px; margin:0; letter-spacing:.3px}
+    header .pill{padding:6px 10px; background:#0b1022; border:1px solid #1f2937; border-radius:999px; color:var(--muted); font-size:12px}
+
+    /* control bar OUTSIDE the map */
+    .controls{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      padding:10px 16px; border-bottom:1px solid #1f2937;
+      background:rgba(9,14,30,.7);
+      position:sticky; top:56px; z-index:9;
+      backdrop-filter: blur(6px);
+    }
+    .controls .btn, .controls label{
+      font-size:13px; padding:9px 12px; border-radius:10px;
+      border:1px solid #253045; background:#0c1530; color:#d1d5db; cursor:pointer;
+    }
+    .controls input[type="file"]{display:none}
+
+    /* 3-column layout: LEFT list | MAP center | RIGHT legend */
+    main{
+      display:grid;
+      grid-template-columns: 340px 1fr 300px;
+      gap:16px; padding:16px; height:100%;
+    }
+    @media (max-width: 1200px){
+      main{grid-template-columns: 280px 1fr 260px;}
+    }
+    @media (max-width: 1024px){
+      main{grid-template-columns: 1fr;}
+      .legend-right, .sidebar-left{order:3}
+    }
+
+    /* Map */
+    .stage-wrap{position:relative; border:1px solid #1f2937; border-radius:var(--br); overflow:hidden; background:#0b1022; box-shadow: 0 10px 30px rgba(0,0,0,.3)}
+    .stage{position:relative; width:100%; height:min(75vh, 900px); background:#0a0f22}
+    .stage img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:contrast(1.05) brightness(.95)}
+
+    /* Entities */
+    .zone{position:absolute; border:1px dashed var(--zone-border); background:var(--zone); border-radius:8px; pointer-events:auto}
+    .zone.editing{outline:2px solid var(--accent)}
+    .machine{position:absolute; width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#000; font-weight:700; font-size:11px; cursor:pointer; user-select:none; transition: transform .08s linear}
+    .machine.forklift{background:var(--forklift);} .machine.lifter{background:var(--lifter);}
+    .machine .dot{position:absolute; right:-6px; top:-6px; width:10px; height:10px; border:2px solid #0b1022; border-radius:999px; background:var(--good)}
+    .machine .tag{position:absolute; top:22px; left:50%; transform:translateX(-50%); background:rgba(17,24,39,.9); border:1px solid #1f2937; padding:2px 6px; font-size:10px; border-radius:8px; color:#cbd5e1; white-space:nowrap;}
+    .machine.idle .dot{background:var(--idle)}
+    .ext{position:absolute; width:12px; height:12px; border-radius:999px; background:var(--good); box-shadow:0 0 0 2px rgba(0,0,0,.35); cursor:grab}
+    .ext.bad{background:var(--bad)}
+
+    /* LEFT: Sidebar with list + filters */
+    .sidebar-left{
+      border:1px solid #1f2937; border-radius:var(--br); overflow:hidden;
+      background:linear-gradient(180deg, #0c142b, #0a1021);
+      display:grid; grid-template-rows:auto auto 1fr auto;
+    }
+    .side-header{display:flex; gap:8px; align-items:center; padding:10px 12px; border-bottom:1px solid #1f2937}
+    .side-header input{flex:1; padding:10px 12px; border-radius:10px; background:#0b1022; border:1px solid #1f2937; color:#e5e7eb}
+    .filters{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid #1f2937; background:#0a1022; color:#cbd5e1; cursor:pointer}
+    .chip.active{background:#0e223f; border-color:#2a3c5a; color:#e5e7eb}
+    .list{overflow:auto; padding:10px; display:grid; gap:10px}
+    .card{background:var(--card); border:1px solid #1f2937; border-radius:14px; padding:12px; display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center}
+    .card h3{margin:0; font-size:14px}
+    .badge{font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid #1f2937; background:#0a1022; color:#cbd5e1}
+    .side-footer{display:flex; gap:8px; padding:10px 12px; border-top:1px solid #1f2937; background:#0b1022}
+    .side-footer button{flex:1; padding:10px 12px; border-radius:10px; border:1px solid #253045; background:#0c1530; color:#d1d5db; cursor:pointer; font-size:13px}
+
+    /* RIGHT: Legend panel */
+    .legend-right{
+      border:1px solid #1f2937; border-radius:var(--br); overflow:hidden;
+      background:linear-gradient(180deg, #0c142b, #0a1021);
+      display:flex; flex-direction:column;
+    }
+    .legend-panel{display:flex; gap:10px; flex-wrap:wrap; background:rgba(2,6,23,.7); border-bottom:1px solid #1f2937; padding:12px; font-size:12px}
+    .legend-panel .sw{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px}
+    .legend-right .body{padding:12px; color:var(--muted); font-size:12px}
+
+    /* Modal */
+    .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(2,6,23,.6); z-index:20}
+    .modal.open{display:grid}
+    .modal .dialog{width:min(520px, 92vw); background:#0b1022; border:1px solid #1f2937; border-radius:16px; box-shadow:0 15px 50px rgba(0,0,0,.4);}
+    .dialog header{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #1f2937}
+    .dialog .content{padding:14px 16px; display:grid; gap:10px}
+    .dialog .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .dialog label{font-size:12px; color:#94a3b8}
+    .dialog input{width:100%; padding:10px 12px; border-radius:10px; background:#0d162f; border:1px solid #22314f; color:#e5e7eb}
+    .dialog footer{display:flex; justify-content:flex-end; gap:8px; padding:14px 16px; border-top:1px solid #1f2937}
+    .dialog button{padding:10px 12px; border-radius:10px; border:1px solid #253045; background:#0c1530; color:#d1d5db; cursor:pointer}
+    .dialog .save{background:#052e1a; border-color:#14532d; color:#86efac}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Evora Center • Demo Hartă Magazin (v4.1)</h1>
+    <span class="pill">Stivuitoare: <strong id="count-f"></strong></span>
+    <span class="pill">Liftere: <strong id="count-l"></strong></span>
+    <span class="pill">Extinctoare: <strong id="count-x"></strong></span>
+  </header>
+
+  <!-- control bar outside the map -->
+  <div class="controls">
+    <label><input type="file" id="imgUpload" accept="image/*" /> Încarcă imagine</label>
+    <button class="btn" id="toggleSim">Pauză</button>
+    <button class="btn" id="resetBtn">Resetează pozițiile</button>
+    <button class="btn" id="zoneModeBtn" title="Desenează dreptunghiuri cu acces interzis">Zone interzise: Oprit</button>
+    <button class="btn" id="clearZonesBtn" title="Șterge toate zonele">Șterge zonele</button>
+  </div>
+
+  <main>
+    <!-- LEFT: list + filters -->
+    <aside class="sidebar-left">
+      <div class="side-header">
+        <input id="search" placeholder="Caută după etichetă, tip… (ex. F-003)" />
+      </div>
+      <div class="side-header">
+        <div class="filters">
+          <button class="chip active" data-filter="all">Toate</button>
+          <button class="chip" data-filter="forklift">Stivuitoare</button>
+          <button class="chip" data-filter="lifter">Liftere</button>
+          <button class="chip" data-filter="ext">Extinctoare</button>
+          <button class="chip" data-status="moving">În mișcare</button>
+          <button class="chip" data-status="idle">Inactiv >5m</button>
+          <button class="chip" data-status="expired">Extinct. expirate</button>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+      <div class="side-footer">
+        <button id="btnAddForklift" title="Adaugă stivuitor">+ Stivuitor</button>
+        <button id="btnAddLifter" title="Adaugă lifter">+ Lifter</button>
+        <button id="btnAddExt" title="Adaugă extinctor">+ Extinctor</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: map -->
+    <section class="stage-wrap">
+      <div class="stage" id="stage" aria-label="Scena podelei">
+        <img id="floorImg" src="floor.png" alt="Plan magazin"
+             onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=1600&auto=format&fit=crop';" />
+      </div>
+    </section>
+
+    <!-- RIGHT: legend -->
+    <aside class="legend-right">
+      <div class="legend-panel">
+        <span><span class="sw" style="background: var(--forklift)"></span>Stivuitor</span>
+        <span><span class="sw" style="background: var(--lifter)"></span>Lifter</span>
+        <span><span class="sw" style="background: var(--good)"></span>În mișcare / OK</span>
+        <span><span class="sw" style="background: var(--idle)"></span>Inactiv > 5m</span>
+        <span><span class="sw" style="background: var(--bad)"></span>Extinctor expirat</span>
+      </div>
+      <div class="body">
+        Panou legendă. Culorile și stările nu mai acoperă harta.
+      </div>
+    </aside>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="dialog">
+      <header>
+        <strong id="modalTitle">Editează</strong>
+        <button id="closeModal">✕</button>
+      </header>
+      <div class="content" id="modalContent"></div>
+      <footer>
+        <button id="deleteBtn" title="Șterge">Șterge</button>
+        <button class="save" id="saveBtn">Salvează</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+  const NUM_FORKLIFTS=5, NUM_LIFTERS=5;
+  const IDLE_THRESHOLD_MS=5*60*1000;
+  const REAL_WIDTH_M=120, REAL_HEIGHT_M=80;
+  const state={
+    running:true,machines:[],extinguishers:[],zones:[],
+    selected:null,zoneMode:false,draggingExt:null,dragOffset:{x:0,y:0},
+    filterKind:'all',filterStatus:null
+  };
+
+  const stage=document.getElementById('stage'), listEl=document.getElementById('list'), modal=document.getElementById('modal');
+  const modalTitle=document.getElementById('modalTitle'), modalContent=document.getElementById('modalContent');
+  const saveBtn=document.getElementById('saveBtn'), deleteBtn=document.getElementById('deleteBtn');
+  const now=()=>Date.now(), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rand=(a,b)=>Math.random()*(b-a)+a;
+  const fmtDateOnly=d=>new Date(d).toISOString().slice(0,10);
+  const timeAgo=ts=>{const s=Math.floor((now()-ts)/1000); if(s<60) return s+"s în urmă"; const m=Math.floor(s/60); if(m<60) return m+"m în urmă"; const h=Math.floor(m/60); if(h<24) return h+"h în urmă"; const d=Math.floor(h/24); return d+"z în urmă";};
+  const el=(t,c,h)=>{const e=document.createElement(t); if(c) e.className=c; if(h!==undefined) e.innerHTML=h; return e;};
+  const uid=p=>`${p}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+  const tagFromCount=(type,count)=>`${type==='forklift'?'F':'L'}-${String(count+1).padStart(3,'0')}`;
+  function perimeterPoint(d,W,H,pad=0){const perim=2*(W+H); d=((d%perim)+perim)%perim; if(d<W) return {x:pad+d,y:pad}; if(d<W+H) return {x:W-pad,y:pad+(d-W)}; if(d<2*W+H) return {x:W-pad-(d-(W+H)),y:H-pad}; return {x:pad,y:H-pad-(d-(2*W+H))};}
+
+  function initMachines(){
+    const W=stage.clientWidth,H=stage.clientHeight;
+    function make(type,i){
+      const ang=rand(0,Math.PI*2); return {
+        id:uid('m'), type, tag: tagFromCount(type, i),
+        x:rand(30,W-30), y:rand(30,H-30),
+        dirX:Math.cos(ang), dirY:Math.sin(ang),
+        varKmh:rand(3.5,5.0), lastMovedAt:now(),
+        lastCheckedAt:now()-rand(1,14)*24*3600*1000,
+        lastApprovedAt:now()-rand(20,90)*24*3600*1000,
+        pausedUntil:0
+      }
+    }
+    state.machines=[...Array.from({length:NUM_FORKLIFTS},(_,i)=>make('forklift',i)),...Array.from({length:NUM_LIFTERS},(_,i)=>make('lifter',i))];
+  }
+  function initExtinguishers(){
+    const W=stage.clientWidth,H=stage.clientHeight; const around=16,pad=20,perim=2*(W+H);
+    state.extinguishers=Array.from({length:around},(_,i)=>{const p=perimeterPoint(i/around*perim,W,H,pad); return{id:uid('x'),tag:`X-${String(i+1).padStart(3,'0')}`,x:p.x,y:p.y,installedAt:now()-rand(100,600)*24*3600*1000,expiresAt:now()+rand(-120,180)*24*3600*1000};});
+  }
+
+  function render(){
+    stage.querySelectorAll('.machine,.ext,.zone').forEach(n=>n.remove());
+    state.machines.forEach(m=>{const n=el('div',`machine ${m.type}`); n.style.transform=`translate(${m.x-11}px,${m.y-11}px)`; n.title=`${m.type==='forklift'?'STIVUITOR':'LIFTER'} ${m.tag}`; n.dataset.id=m.id; n.innerHTML=`<span>${m.type==='forklift'?'F':'L'}</span><span class="dot"></span><span class="tag">${m.tag}</span>`; if((now()-m.lastMovedAt)>IDLE_THRESHOLD_MS) n.classList.add('idle'); n.addEventListener('click',()=>openEdit('machine',m.id)); stage.appendChild(n);});
+    state.extinguishers.forEach(x=>{const n=el('div','ext'); n.style.transform=`translate(${x.x-6}px,${x.y-6}px)`; n.dataset.id=x.id; if(x.expiresAt<now()) n.classList.add('bad'); n.addEventListener('click',()=>openEdit('ext',x.id)); n.addEventListener('mousedown',(e)=>beginDragExt(e,x.id)); stage.appendChild(n);});
+    state.zones.forEach((z,idx)=>{const n=el('div','zone'+(state.zoneMode?' editing':'')); n.style.left=z.x+'px'; n.style.top=z.y+'px'; n.style.width=z.w+'px'; n.style.height=z.h+'px'; n.title=`Zonă interzisă #${idx+1}`; if(state.zoneMode){n.addEventListener('mousedown',(e)=>beginDragZone(e,idx));} stage.appendChild(n);});
+    document.getElementById('count-f').textContent=state.machines.filter(m=>m.type==='forklift').length;
+    document.getElementById('count-l').textContent=state.machines.filter(m=>m.type==='lifter').length;
+    document.getElementById('count-x').textContent=state.extinguishers.length;
+    renderList();
+  }
+
+  function renderList(filterText=''){
+    listEl.innerHTML='';
+    const items=[...state.machines.map(m=>({kind:'machine',id:m.id,type:m.type,moving:(now()-m.lastMovedAt)<=IDLE_THRESHOLD_MS,title:`${m.type==='forklift'?'Stivuitor':'Lifter'} ${m.tag}`,subtitle:`Verificat ${timeAgo(m.lastCheckedAt)} • Aprobat ${timeAgo(m.lastApprovedAt)}`})),...state.extinguishers.map(x=>({kind:'ext',id:x.id,type:'ext',expired:x.expiresAt<now(),title:`Extinctor ${x.tag}`,subtitle:`Expiră ${fmtDateOnly(x.expiresAt)}`}))];
+    const txt=filterText.toLowerCase();
+    const filtered=items.filter(it=>{
+      if(txt && !it.title.toLowerCase().includes(txt)) return false;
+      if(state.filterKind!=='all' && it.type!==state.filterKind) return false;
+      if(state.filterStatus){
+        if(state.filterStatus==='moving' && !(it.kind==='machine' && it.moving)) return false;
+        if(state.filterStatus==='idle' && !(it.kind==='machine' && !it.moving)) return false;
+        if(state.filterStatus==='expired' && !(it.kind==='ext' && it.expired)) return false;
+      }
+      return true;
+    });
+    filtered.forEach(it=>{
+      const card=el('div','card');
+      const left=el('div',null);
+      left.innerHTML=`<h3>${it.title}</h3><div style="color:var(--muted); font-size:12px">${it.subtitle}</div>`;
+      const right=el('div',null);
+      const status = it.kind==='machine' ? (it.moving?'În mișcare':'Inactiv > 5m') : (it.expired?'Expirat':'OK');
+      const badge=el('span','badge',status);
+      right.appendChild(badge);
+      card.appendChild(left); card.appendChild(right);
+      card.addEventListener('click',()=>openEdit(it.kind,it.id));
+      listEl.appendChild(card);
+    });
+  }
+
+  function tick(dt){
+    const W=stage.clientWidth,H=stage.clientHeight;
+    state.machines.forEach(m=>{
+      if(Date.now()<m.pausedUntil) return;
+      if(Math.random()<0.0005){ m.pausedUntil=Date.now()+(6+Math.random()*6)*60*1000; return; }
+      const pxPerMs=((m.varKmh/3.6)*((W/REAL_WIDTH_M+H/REAL_HEIGHT_M)/2))/1000;
+      let nx=m.x+m.dirX*pxPerMs*dt, ny=m.y+m.dirY*pxPerMs*dt, margin=12;
+      if(nx<margin||nx>W-margin){m.dirX*=-1; nx=clamp(nx,margin,W-margin);}
+      if(ny<margin||ny>H-margin){m.dirY*=-1; ny=clamp(ny,margin,H-margin);}
+      if(getZoneAt(nx,ny)){
+        m.dirX=-m.dirX+rand(-0.15,0.15); m.dirY=-m.dirY+rand(-0.15,0.15);
+        const L=Math.hypot(m.dirX,m.dirY)||1; m.dirX/=L; m.dirY/=L;
+        nx=m.x+m.dirX*pxPerMs*dt; ny=m.y+m.dirY*pxPerMs*dt;
+      }
+      m.x=nx; m.y=ny;
+      const turn=rand(-0.03,0.03), c=Math.cos(turn), s=Math.sin(turn), dx=m.dirX, dy=m.dirY;
+      m.dirX=dx*c-dy*s; m.dirY=dx*s+dy*c; const L=Math.hypot(m.dirX,m.dirY)||1; m.dirX/=L; m.dirY/=L;
+      if(Math.random()<0.003){ m.varKmh=clamp(m.varKmh+rand(-0.3,0.3),3.0,5.0); }
+      m.lastMovedAt=Date.now();
+    });
+  }
+
+  function saveZones(){localStorage.setItem('ec_zones',JSON.stringify(state.zones));}
+  function loadZones(){try{state.zones=JSON.parse(localStorage.getItem('ec_zones')||'[]');}catch{state.zones=[];}}
+  function getZoneAt(x,y){return state.zones.find(z=>x>=z.x&&x<=z.x+z.w&&y>=z.y&&y<=z.y+z.h);}
+  let draggingZone=null, zoneDragOffset={x:0,y:0}, drawStart=null;
+  function stagePoint(e){const r=stage.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top};}
+  function beginDragZone(e,idx){ if(!state.zoneMode) return; draggingZone=idx; const p=stagePoint(e); const z=state.zones[idx]; zoneDragOffset={x:p.x-z.x,y:p.y-z.y}; document.addEventListener('mousemove', onDragZone); document.addEventListener('mouseup', endDragZone); }
+  function onDragZone(e){ if(draggingZone==null) return; const p=stagePoint(e); const z=state.zones[draggingZone]; z.x=p.x-zoneDragOffset.x; z.y=p.y-zoneDragOffset.y; render(); }
+  function endDragZone(){ if(draggingZone==null) return; draggingZone=null; saveZones(); document.removeEventListener('mousemove', onDragZone); document.removeEventListener('mouseup', endDragZone); }
+  function moveDrawZone(e){ if(!state.zoneMode||!drawStart) return; const p=stagePoint(e); const x=Math.min(drawStart.x,p.x), y=Math.min(drawStart.y,p.y); const w=Math.abs(drawStart.x-p.x), h=Math.abs(drawStart.y-p.y); state.zones[state.zones.length-1]={x,y,w,h}; render(); }
+  function endDrawZone(){ if(!state.zoneMode) return; drawStart=null; saveZones(); }
+
+  function beginDragExt(e,id){ const x=state.extinguishers.find(a=>a.id===id); if(!x) return; const p=stagePoint(e); state.draggingExt=id; state.dragOffset={x:p.x-x.x,y:p.y-x.y}; document.addEventListener('mousemove', onDragExt); document.addEventListener('mouseup', endDragExt); }
+  function onDragExt(e){ const id=state.draggingExt; if(!id) return; const ext=state.extinguishers.find(a=>a.id===id); const p=stagePoint(e); const W=stage.clientWidth,H=stage.clientHeight; ext.x=clamp(p.x-state.dragOffset.x,8,W-8); ext.y=clamp(p.y-state.dragOffset.y,8,H-8); render(); }
+  function endDragExt(){ state.draggingExt=null; document.removeEventListener('mousemove', onDragExt); document.removeEventListener('mouseup', endDragExt); }
+
+  function openEdit(kind,id){
+    state.selected={kind,id}; modal.classList.add('open'); let html='';
+    if(kind==='machine'){
+      const m=state.machines.find(x=>x.id===id);
+      modalTitle.textContent=`${m.type==='forklift'?'STIVUITOR':'LIFTER'} ${m.tag}`;
+      html=`<div class="row">
+        <div><label>Etichetă</label><input id="f-tag" value="${m.tag}" /></div>
+        <div><label>Tip</label><input id="f-type" value="${m.type}" /></div>
+      </div>
+      <div class="row">
+        <div><label>Ultima verificare</label><input id="f-checked" type="datetime-local" value="${toLocalInput(m.lastCheckedAt)}" /></div>
+        <div><label>Aprobat de autorități</label><input id="f-approved" type="datetime-local" value="${toLocalInput(m.lastApprovedAt)}" /></div>
+      </div>`;
+    } else {
+      const x=state.extinguishers.find(a=>a.id===id);
+      modalTitle.textContent=`Extinctor ${x.tag}`;
+      html=`<div class="row">
+        <div><label>Etichetă</label><input id="x-tag" value="${x.tag}" /></div>
+        <div><label>Data expirării</label><input id="x-expires" type="date" value="${fmtDateOnly(x.expiresAt)}" /></div>
+      </div>`;
+    }
+    modalContent.innerHTML=html;
+  }
+  function toLocalInput(ts){ const d=new Date(ts); const z=d.getTimezoneOffset(); const d2=new Date(d.getTime()-z*60000); return d2.toISOString().slice(0,16); }
+  function saveEdit(){
+    const sel=state.selected; if(!sel) return;
+    if(sel.kind==='machine'){
+      const m=state.machines.find(x=>x.id===sel.id);
+      m.tag=document.getElementById('f-tag').value.trim()||m.tag;
+      m.type=document.getElementById('f-type').value.trim()||m.type;
+      const c=document.getElementById('f-checked').value, a=document.getElementById('f-approved').value;
+      if(c) m.lastCheckedAt=new Date(c).getTime();
+      if(a) m.lastApprovedAt=new Date(a).getTime();
+    } else {
+      const x=state.extinguishers.find(a=>a.id===sel.id);
+      x.tag=document.getElementById('x-tag').value.trim()||x.tag;
+      const e=document.getElementById('x-expires').value;
+      if(e) x.expiresAt=new Date(e+'T00:00:00').getTime();
+    }
+    closeModal(); render();
+  }
+  function deleteEntity(){
+    const sel=state.selected; if(!sel) return;
+    if(sel.kind==='machine'){ state.machines=state.machines.filter(x=>x.id!==sel.id);}
+    else { state.extinguishers=state.extinguishers.filter(x=>x.id!==sel.id);}
+    closeModal(); render();
+  }
+  function closeModal(){ modal.classList.remove('open'); state.selected=null; }
+
+  function addMachine(type){
+    const W=stage.clientWidth,H=stage.clientHeight; const countSame=state.machines.filter(m=>m.type===type).length; const ang=rand(0,Math.PI*2);
+    const m={id:uid('m'),type,tag:tagFromCount(type,countSame),x:rand(30,W-30),y:rand(30,H-30),dirX:Math.cos(ang),dirY:Math.sin(ang),varKmh:rand(3.5,5.0),lastMovedAt:Date.now(),lastCheckedAt:Date.now(),lastApprovedAt:Date.now(),pausedUntil:0};
+    state.machines.push(m); render();
+  }
+  function addExtinguisher(){ const W=stage.clientWidth,H=stage.clientHeight; const x=rand(20,W-20), y=rand(20,H-20); const idx=state.extinguishers.length; state.extinguishers.push({id:uid('x'),tag:`X-${String(idx+1).padStart(3,'0')}`,x,y,installedAt:Date.now(),expiresAt:Date.now()+180*24*3600*1000}); render(); }
+
+  document.getElementById('search').addEventListener('input', e=>renderList(e.target.value));
+  document.getElementById('toggleSim').addEventListener('click', e=>{ state.running=!state.running; e.target.textContent=state.running?'Pauză':'Continuă'; });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ initMachines(); render(); });
+  document.getElementById('zoneModeBtn').addEventListener('click', e=>{ state.zoneMode=!state.zoneMode; e.target.textContent='Zone interzise: '+(state.zoneMode?'Pornit':'Oprit'); render(); });
+  document.getElementById('clearZonesBtn').addEventListener('click', ()=>{ state.zones=[]; saveZones(); render(); });
+  document.getElementById('imgUpload').addEventListener('change', e=>{const f=e.target.files&&e.target.files[0]; if(!f) return; const url=URL.createObjectURL(f); document.getElementById('floorImg').src=url;});
+
+  stage.addEventListener('mousedown', e=>{ if(!state.zoneMode) return; const r=stage.getBoundingClientRect(); const p={x:e.clientX-r.left,y:e.clientY-r.top}; state.zones.push({x:p.x,y:p.y,w:1,h:1}); drawStart=p; document.addEventListener('mousemove', moveDrawZone); document.addEventListener('mouseup', ev=>{ moveDrawZone(ev); endDrawZone(); document.removeEventListener('mousemove', moveDrawZone); }, {once:true}); });
+
+  function runSelfTests(){ console.group('Teste'); try{ if(state.machines.length===0) initMachines(); if(state.extinguishers.length===0) initExtinguishers(); console.assert(state.machines.length===NUM_FORKLIFTS+NUM_LIFTERS,'Inițializare utilaje'); console.assert(state.extinguishers.length>0,'Inițializare extinctoare'); const m0=state.machines[0]; const x0=m0.x,y0=m0.y; tick(16); console.assert(m0.x!==x0||m0.y!==y0,'Mișcare după tick'); console.log('Toate testele au trecut ✅'); }catch(e){ console.error('Eroare teste', e);} console.groupEnd(); }
+  let lastT=performance.now(); function loop(t){ const dt=t-lastT; lastT=t; if(state.running){ tick(dt); render(); } requestAnimationFrame(loop); }
+  function boot(){ loadZones(); initMachines(); initExtinguishers(); render(); runSelfTests(); requestAnimationFrame(loop); }
+  window.addEventListener('load', boot); window.addEventListener('resize', ()=>render());
+  </script>
+</body>
+</html>
