@@ -11,8 +11,14 @@ import * as Tasks from './tasks.js';
 import { TaskPanel } from './task_panel.js';
 import { RTLSClient } from './ws-client.js'; // back-compat + env-aware
 
-// ---- 1) Create UI & Simulator FIRST ----
-const ui = new UI();                             // must exist before TaskPanel
+// ---- 1) Create UI & Simulator FIRST ---- // must exist before TaskPanel
+const ui = new UI({
+  initial: {
+    events: [],        // used by ui.renderEvents during constructor
+    alerts: [],        // optional but safe
+    workorders: []     // optional but safe
+  }
+});
 const sim = new Simulator({ w: 250, h: 150 });   // floor: 250m x 150m
 
 // ---- 2) Task Panel (waypoints UI) ----
