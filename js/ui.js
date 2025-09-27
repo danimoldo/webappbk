@@ -2,13 +2,7 @@
 import { fmtTime } from './utils.js';
 export class UI {
   constructor(state){ this.state=state; this.eventsEl=document.getElementById('eventsPane'); this.drawerEl=document.getElementById('assetDrawer'); this.renderEvents(); this.renderDrawer(null); }
-   renderEvents(data) {
-  data = data || {};
-  data.events = Array.isArray(data.events) ? data.events : [];
-  data.alerts = Array.isArray(data.alerts) ? data.alerts : [];
-  data.workorders = Array.isArray(data.workorders) ? data.workorders : [];
-}
-
+  renderEvents(){
     const head=`<div class="events-head"><strong>Jurnal Evenimente</strong><span class="badge">${this.state.events.length}</span></div>`;
     const items=this.state.events.slice().reverse().map(ev=>`<div class="event"><span class="t">${fmtTime(ev.ts)}</span> — <b>${ev.type}</b> — ${ev.msg}</div>`).join('');
     this.eventsEl.innerHTML=head+`<div class="events">${items}</div>`;
