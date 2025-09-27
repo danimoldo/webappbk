@@ -3,9 +3,11 @@ import { clamp, now, dist, pointInPoly } from './utils.js';
 import { ZoneManager } from './zones.js';
 import { Simulator } from './sim.js';
 import { UI } from './ui.js';
-import './asset_add_panel.js';        // floating add form + click-to-place
-import './ui_asset_details_patch.js';  // dates in "Detalii Asset"
 import { RTLSClient } from './ws-client.js';
+import './asset_add_panel.js';        // floating add form + click-to-place
+import './asset_add_drawer.js';       // toolbar-matching button + right drawer (no overlay)
+import './ui_asset_details_patch.js'; // dates inside "Detalii Asset"
+
 
 const state = {
   site: { width_m: 250, height_m: 150, height_m_ceiling: 8 },
